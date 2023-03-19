@@ -1,40 +1,42 @@
-import { throttle } from 'lodash';
+import throttle from 'lodash.throttle';
+
+const STOREG_KEY = "feedback-form-state";
+
+const formData = {};
 
 const form = document.querySelector('.feedback-form');
-const email = document.querySelector('input');
-const message = document.querySelector('textarea');
-const STORAGE_KEY = 'feedback-form-state';
+form.addEventListener('submit', onButtonSubmit);
+form.addEventListener('input', throttle(onValueInput, 750));
 
-form.addEventListener('input', throttle(onFormInput, 500));
-form.addEventListener('submit', onFormSubmit);
+populateInputValue ();
 
-populateForm();
-
-
-function onFormInput() {
-  const formData = {
-    email: email.value,
-    message: message.value,
-  };
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+function onValueInput (evt){
+   
+   formData[evt.target.name] = evt.target.value;
+   localStorage.setItem(STOREG_KEY, JSON.stringify(formData));
 }
 
 
-function onFormSubmit(e) {
-  e.preventDefault();
-  e.currentTarget.reset();
-  console.log(localStorage.getItem(STORAGE_KEY));
-  localStorage.removeItem(STORAGE_KEY);
+function onButtonSubmit (evt){
+    evt.preventDefault();
+
+    console.log(JSON.parse(localStorage.getItem(STOREG_KEY)));
+    formData.email = '';
+    formData.message = '';
+    evt.currentTarget.reset();
+    localStorage.removeItem(STOREG_KEY)
 }
 
+function populateInputValue () {
+     const savedMessage = localStorage.getItem(STOREG_KEY);
 
-function populateForm() {
-  const saveData = JSON.parse(localStorage.getItem(STORAGE_KEY));
-
-  if (saveData === null) {
-    return;
-  }
-  email.value = saveData.email;
-  message.value = saveData.message;
+     if (savedMessage){
+        const parsedMessage = JSON.parse(savedMessage);
+        formData.email = parsedMessage.email;
+        formData.message = parsedMessage.message;
+        Object.keys(parsedMessage).map(element => {
+            document.querySelector(`[name='${element}']`).value = parsedMessage[element];
+        });
+    }
+     
 }
